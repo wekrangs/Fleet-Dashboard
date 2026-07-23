@@ -81,6 +81,14 @@
             color: var(--text-muted);
             margin-bottom: 40px;
             letter-spacing: 1px;
+            background: rgba(20, 27, 45, 0.5);
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            border: 1px dashed rgba(0, 229, 255, 0.3);
+            position: relative;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         .report-info span {
@@ -261,10 +269,11 @@
     <div class="version-info">
         <div><strong>Version:</strong> 1</div>
         <div><strong>Date:</strong> July 23, 2026</div>
-        <div><strong>Time:</strong> 11:25 AM AEST</div>
+        <div><strong>Time:</strong> 11:58 AM AEST</div>
     </div>
 
     <h1>Fleet Dashboard</h1>
+    
     <div class="report-info" id="reportInfo" style="display: none;">
         Report date range : <span id="reportDateRangeText"></span>
     </div>
@@ -323,26 +332,7 @@
             let headerIdx = -1;
             let cols = { name: -1, license: -1, date: -1, distance: -1, startOdo: -1, endOdo: -1 };
             
-            let extractedDateRange = "N/A";
-            for (let i = 0; i < Math.min(30, data.length); i++) {
-                if (data[i]) {
-                    for (let j = 0; j < data[i].length; j++) {
-                        if (typeof data[i][j] === 'string' && data[i][j].trim() === 'Report date range :') {
-                            if (data[i+1] && data[i+1][j]) {
-                                extractedDateRange = data[i+1][j];
-                            } else if (data[i][j+1]) { 
-                                extractedDateRange = data[i][j+1];
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (extractedDateRange !== "N/A") {
-                document.getElementById('reportDateRangeText').innerText = extractedDateRange;
-                document.getElementById('reportInfo').style.display = 'block';
-            }
-
+            // 1. Find Header Row
             for(let i = 0; i < data.length; i++) {
                 const row = data[i];
                 if(!row) continue;
@@ -366,7 +356,10 @@
             }
 
             const trailerMap = new Map();
+            let minDate = null;
+            let maxDate = null;
             
+            // 2. Parse Rows & Extract Data
             for(let i = headerIdx + 1; i < data.length; i++) {
                 const row = data[i];
                 if (!row || row.length === 0) continue;
@@ -394,9 +387,19 @@
                 
                 const trailer = trailerMap.get(name);
                 
+                // If missing a start date, it is the total row
                 if (!dateVal || dateVal === "NaN" || String(dateVal).trim() === "") {
                     trailer.totalDistance = dist;
                 } else {
+                    // Valid day row
+                    let rowDate = dateVal instanceof Date ? dateVal : new Date(dateVal);
+                    
+                    // Track Date Range Extracted Directly from Column
+                    if (!isNaN(rowDate.getTime())) {
+                        if (!minDate || rowDate < minDate) minDate = rowDate;
+                        if (!maxDate || rowDate > maxDate) maxDate = rowDate;
+                    }
+
                     trailer.days.push({ 
                         dateStr: formatExcelDate(dateVal), 
                         distance: dist 
@@ -413,7 +416,20 @@
                     }
                 }
             }
+
+            // 3. Render Date Range
+            if (minDate && maxDate) {
+                const formatFullDate = (d) => {
+                    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                    return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+                };
+                const rangeStr = `${formatFullDate(minDate)} - ${formatFullDate(maxDate)}`;
+                document.getElementById('reportDateRangeText').innerText = rangeStr;
+                document.getElementById('reportInfo').style.display = 'block';
+            }
             
+            // 4. Render Trailer Cards
             allTrailers = Array.from(trailerMap.values());
             allTrailers.sort((a, b) => b.totalDistance - a.totalDistance);
             renderTrailers(allTrailers);
