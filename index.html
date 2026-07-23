@@ -67,8 +67,10 @@
         }
 
         .sidebar-trigger span {
-            display: inline-block;
-            transform: rotate(-90deg); 
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-90deg);
             font-weight: bold;
             letter-spacing: 3px;
             text-transform: uppercase;
@@ -457,8 +459,8 @@
 
     <div class="version-info">
         <div><strong>Version:</strong> 1</div>
-        <div><strong>Date:</strong> July 23, 2026</div>
-        <div><strong>Time:</strong> 4:16 PM AEST</div>
+        <div><strong>Date:</strong> July 24, 2026</div>
+        <div><strong>Time:</strong> 9:07 AM AEST</div>
     </div>
 
     <h1>Fleet Dashboard</h1>
@@ -501,15 +503,7 @@
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-                    
-                    const sheetName = workbook.SheetNames.includes('Journey day summary') 
-                                      ? 'Journey day summary' 
-                                      : workbook.SheetNames[0];
-                    
-                    const sheet = workbook.Sheets[sheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-                    
-                    processExcelData(jsonData);
+                    processExcelWorkbook(workbook);
                 } catch (error) {
                     console.error("Error reading file:", error);
                     alert("There was an error parsing the file. Make sure it is a valid Excel format.");
@@ -518,29 +512,39 @@
             reader.readAsArrayBuffer(file);
         }
 
-        function processExcelData(data) {
+        function processExcelWorkbook(workbook) {
+            let targetData = null;
             let headerIdx = -1;
             let cols = { name: -1, license: -1, date: -1, distance: -1, startOdo: -1, endOdo: -1 };
             
-            for(let i = 0; i < data.length; i++) {
-                const row = data[i];
-                if(!row) continue;
+            // Dynamically search all sheets for the required columns
+            for (let sheetName of workbook.SheetNames) {
+                const data = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
                 
-                cols.name = row.indexOf("Name");
-                cols.license = row.indexOf("License plate");
-                cols.date = row.indexOf("Start date");
-                cols.distance = row.indexOf("Distance");
-                cols.startOdo = row.indexOf("Start ODO");
-                cols.endOdo = row.indexOf("End ODO");
-                
-                if (cols.name !== -1 && cols.distance !== -1) {
-                    headerIdx = i;
-                    break;
+                for(let i = 0; i < Math.min(50, data.length); i++) {
+                    const row = data[i];
+                    if(!row) continue;
+                    
+                    const nameIdx = row.indexOf("Name");
+                    const distIdx = row.indexOf("Distance");
+                    
+                    if (nameIdx !== -1 && distIdx !== -1) {
+                        targetData = data;
+                        headerIdx = i;
+                        cols.name = nameIdx;
+                        cols.license = row.indexOf("License plate");
+                        cols.date = row.indexOf("Start date");
+                        cols.distance = distIdx;
+                        cols.startOdo = row.indexOf("Start ODO");
+                        cols.endOdo = row.indexOf("End ODO");
+                        break;
+                    }
                 }
+                if (targetData) break; // Stop looking once we find the correct sheet
             }
             
-            if (headerIdx === -1) {
-                alert("Could not find required column headers ('Name', 'Distance') in the Excel file.");
+            if (!targetData) {
+                alert("Could not find required column headers ('Name', 'Distance') in any sheet of the Excel file.");
                 return;
             }
 
@@ -548,8 +552,8 @@
             let minDate = null;
             let maxDate = null;
             
-            for(let i = headerIdx + 1; i < data.length; i++) {
-                const row = data[i];
+            for(let i = headerIdx + 1; i < targetData.length; i++) {
+                const row = targetData[i];
                 if (!row || row.length === 0) continue;
                 
                 const name = row[cols.name];
