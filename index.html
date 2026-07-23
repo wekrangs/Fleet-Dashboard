@@ -53,7 +53,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding-left: 6px; /* Physically pushes the rotated text away from the edge */
+            padding-left: 6px; 
             cursor: pointer;
             box-shadow: 2px 0 15px rgba(0, 229, 255, 0.4);
             transition: all 0.3s ease;
@@ -115,6 +115,12 @@
             color: var(--text-muted);
             margin-bottom: 15px;
             text-align: center;
+        }
+
+        #sidebarSearchInput {
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 10px;
         }
         
         .sidebar .clear-filter-sidebar {
@@ -440,7 +446,10 @@
     <div class="sidebar">
         <h3><i class="fa-solid fa-list-check"></i> Select Trailers</h3>
         <div class="sidebar-instructions">Check boxes to isolate and compare specific trailers on the dashboard.</div>
+        
+        <input type="text" id="sidebarSearchInput" placeholder="Filter list..." onkeyup="filterSidebarList()">
         <button class="clear-filter-sidebar" onclick="clearFilter()"><i class="fa-solid fa-eraser"></i> Clear Filter</button>
+        
         <div class="sidebar-list" id="sidebarTrailerList">
             <!-- Checkboxes will be injected here dynamically -->
         </div>
@@ -449,7 +458,7 @@
     <div class="version-info">
         <div><strong>Version:</strong> 1</div>
         <div><strong>Date:</strong> July 23, 2026</div>
-        <div><strong>Time:</strong> 1:00 PM AEST</div>
+        <div><strong>Time:</strong> 4:16 PM AEST</div>
     </div>
 
     <h1>Fleet Dashboard</h1>
@@ -636,6 +645,20 @@
             });
         }
 
+        function filterSidebarList() {
+            const query = document.getElementById('sidebarSearchInput').value.toLowerCase().trim();
+            const items = document.querySelectorAll('#sidebarTrailerList .checkbox-item');
+            
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
         function formatExcelDate(dateVal) {
             let d;
             if (dateVal instanceof Date) {
@@ -735,8 +758,15 @@
         }
 
         function clearFilter() {
-            // Clear search box
+            // Clear main search box
             document.getElementById('searchInput').value = '';
+            
+            // Clear sidebar search box and reset visibility
+            const sidebarSearch = document.getElementById('sidebarSearchInput');
+            if(sidebarSearch) {
+                sidebarSearch.value = '';
+                filterSidebarList();
+            }
             
             // Uncheck all checkboxes in the sidebar
             const checkboxes = document.querySelectorAll('#sidebarTrailerList input[type="checkbox"]');
@@ -756,6 +786,10 @@
             allTrailers = [];
             document.getElementById('fileInput').value = '';
             document.getElementById('searchInput').value = '';
+            
+            const sidebarSearch = document.getElementById('sidebarSearchInput');
+            if (sidebarSearch) sidebarSearch.value = '';
+            
             document.getElementById('dashboard').innerHTML = '<div class="empty-state"></div>';
             document.getElementById('reportInfo').style.display = 'none';
             document.getElementById('trailerCountText').innerText = '';
