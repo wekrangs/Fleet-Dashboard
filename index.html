@@ -29,13 +29,170 @@
             color: var(--text-main);
             font-family: 'Montserrat', sans-serif;
             margin: 0;
-            padding: 40px 20px;
+            padding: 40px 20px 40px 60px; /* Left padding for the Compare tab */
             background-image: radial-gradient(circle at top right, #112240, #0b0f19);
             min-height: 100vh;
             position: relative;
+            overflow-x: hidden;
         }
 
-        /* Version Info Box */
+        /* --- VISIBLE SIDEBAR TRIGGER (COMPARE TAB) --- */
+        .sidebar-trigger {
+            position: fixed;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px; 
+            height: 180px; 
+            background: rgba(0, 229, 255, 0.15);
+            border: 1px solid var(--primary-glow);
+            border-left: none;
+            color: var(--primary-glow);
+            z-index: 998;
+            border-radius: 0 8px 8px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-left: 6px; /* Physically pushes the rotated text away from the edge */
+            cursor: pointer;
+            box-shadow: 2px 0 15px rgba(0, 229, 255, 0.4);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .sidebar-trigger:hover {
+            background: var(--primary-glow);
+            color: #000;
+            box-shadow: 2px 0 25px rgba(0, 229, 255, 0.7);
+        }
+
+        .sidebar-trigger span {
+            display: inline-block;
+            transform: rotate(-90deg); 
+            font-weight: bold;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        /* --- SLIDING SIDEBAR --- */
+        .sidebar {
+            position: fixed;
+            left: -300px; 
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: rgba(15, 21, 36, 0.98);
+            border-right: 2px solid var(--primary-glow);
+            box-shadow: 10px 0 40px rgba(0, 229, 255, 0.3);
+            z-index: 999;
+            transition: left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar-trigger:hover + .sidebar,
+        .sidebar:hover {
+            left: 0;
+        }
+
+        .sidebar h3 {
+            color: var(--primary-glow);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(0,229,255,0.5);
+            text-align: center;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+            padding-bottom: 15px;
+        }
+        
+        .sidebar-instructions {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .sidebar .clear-filter-sidebar {
+            width: 100%;
+            margin-bottom: 15px;
+            border-color: var(--secondary-glow);
+        }
+        
+        .sidebar .clear-filter-sidebar:hover {
+            background: var(--secondary-glow);
+            box-shadow: 0 0 15px var(--secondary-glow);
+            color: #000;
+        }
+
+        /* Checkbox List Styling */
+        .sidebar-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-right: 10px;
+        }
+
+        /* Custom Scrollbar for sidebar */
+        .sidebar-list::-webkit-scrollbar { width: 6px; }
+        .sidebar-list::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 3px; }
+        .sidebar-list::-webkit-scrollbar-thumb { background: var(--primary-glow); border-radius: 3px; }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: background 0.2s ease;
+        }
+
+        .checkbox-item:hover {
+            background: rgba(0, 229, 255, 0.1);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--text-muted);
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            background: transparent;
+            transition: all 0.2s ease;
+        }
+
+        .checkbox-item input[type="checkbox"]:checked {
+            background: var(--primary-glow);
+            border-color: var(--primary-glow);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+        }
+
+        .checkbox-item input[type="checkbox"]:checked::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: #000;
+            font-size: 12px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* --- REST OF STYLES --- */
         .version-info {
             position: absolute;
             top: 20px;
@@ -82,7 +239,7 @@
             margin-bottom: 40px;
             letter-spacing: 1px;
             background: rgba(20, 27, 45, 0.5);
-            padding: 10px 20px;
+            padding: 15px 25px;
             border-radius: 8px;
             display: inline-block;
             border: 1px dashed rgba(0, 229, 255, 0.3);
@@ -94,6 +251,14 @@
         .report-info span {
             color: #fff;
             font-weight: bold;
+        }
+
+        .trailer-counter {
+            margin-top: 10px;
+            font-size: 1.3rem;
+            color: var(--primary-glow);
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
         }
 
         .controls-container {
@@ -266,16 +431,32 @@
 </head>
 <body>
 
+    <!-- Visible Trigger Tab for Sidebar -->
+    <div class="sidebar-trigger">
+        <span>Compare</span>
+    </div>
+    
+    <!-- Sliding Sidebar -->
+    <div class="sidebar">
+        <h3><i class="fa-solid fa-list-check"></i> Select Trailers</h3>
+        <div class="sidebar-instructions">Check boxes to isolate and compare specific trailers on the dashboard.</div>
+        <button class="clear-filter-sidebar" onclick="clearFilter()"><i class="fa-solid fa-eraser"></i> Clear Filter</button>
+        <div class="sidebar-list" id="sidebarTrailerList">
+            <!-- Checkboxes will be injected here dynamically -->
+        </div>
+    </div>
+
     <div class="version-info">
         <div><strong>Version:</strong> 1</div>
         <div><strong>Date:</strong> July 23, 2026</div>
-        <div><strong>Time:</strong> 11:58 AM AEST</div>
+        <div><strong>Time:</strong> 1:00 PM AEST</div>
     </div>
 
     <h1>Fleet Dashboard</h1>
     
     <div class="report-info" id="reportInfo" style="display: none;">
         Report date range : <span id="reportDateRangeText"></span>
+        <div class="trailer-counter" id="trailerCountText"></div>
     </div>
 
     <div class="controls-container">
@@ -285,7 +466,7 @@
         
         <div class="search-group">
             <input type="text" id="searchInput" placeholder="Search trailer name...">
-            <button id="searchBtn" onclick="filterTrailers()"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+            <button id="searchBtn" onclick="applyFilters()"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
             <button id="clearFilterBtn" onclick="clearFilter()"><i class="fa-solid fa-eraser"></i> Clear Filter</button>
         </div>
     </div>
@@ -332,7 +513,6 @@
             let headerIdx = -1;
             let cols = { name: -1, license: -1, date: -1, distance: -1, startOdo: -1, endOdo: -1 };
             
-            // 1. Find Header Row
             for(let i = 0; i < data.length; i++) {
                 const row = data[i];
                 if(!row) continue;
@@ -359,7 +539,6 @@
             let minDate = null;
             let maxDate = null;
             
-            // 2. Parse Rows & Extract Data
             for(let i = headerIdx + 1; i < data.length; i++) {
                 const row = data[i];
                 if (!row || row.length === 0) continue;
@@ -387,14 +566,11 @@
                 
                 const trailer = trailerMap.get(name);
                 
-                // If missing a start date, it is the total row
                 if (!dateVal || dateVal === "NaN" || String(dateVal).trim() === "") {
                     trailer.totalDistance = dist;
                 } else {
-                    // Valid day row
                     let rowDate = dateVal instanceof Date ? dateVal : new Date(dateVal);
                     
-                    // Track Date Range Extracted Directly from Column
                     if (!isNaN(rowDate.getTime())) {
                         if (!minDate || rowDate < minDate) minDate = rowDate;
                         if (!maxDate || rowDate > maxDate) maxDate = rowDate;
@@ -417,7 +593,6 @@
                 }
             }
 
-            // 3. Render Date Range
             if (minDate && maxDate) {
                 const formatFullDate = (d) => {
                     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -429,10 +604,36 @@
                 document.getElementById('reportInfo').style.display = 'block';
             }
             
-            // 4. Render Trailer Cards
             allTrailers = Array.from(trailerMap.values());
             allTrailers.sort((a, b) => b.totalDistance - a.totalDistance);
+            
+            populateSidebar(allTrailers);
             renderTrailers(allTrailers);
+        }
+
+        function populateSidebar(trailers) {
+            const listContainer = document.getElementById('sidebarTrailerList');
+            listContainer.innerHTML = '';
+            
+            // Get unique names and sort them alphanumerically
+            let names = trailers.map(t => t.name);
+            names.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+            names.forEach((name, idx) => {
+                const label = document.createElement('label');
+                label.className = 'checkbox-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = name;
+                checkbox.id = `chk_${idx}`;
+                checkbox.addEventListener('change', applyFilters);
+
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(name));
+                
+                listContainer.appendChild(label);
+            });
         }
 
         function formatExcelDate(dateVal) {
@@ -456,7 +657,13 @@
 
         function renderTrailers(trailersToRender) {
             const container = document.getElementById('dashboard');
+            const countText = document.getElementById('trailerCountText');
+            
             container.innerHTML = '';
+            
+            if (countText) {
+                countText.innerText = `Showing ${trailersToRender.length} Trailer${trailersToRender.length !== 1 ? 's' : ''}`;
+            }
             
             if (trailersToRender.length === 0) {
                 container.innerHTML = '<div class="empty-state">No trailers found matching that criteria.</div>';
@@ -506,24 +713,42 @@
             });
         }
 
-        function filterTrailers() {
+        function applyFilters() {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
-            if (!allTrailers.length) return;
             
-            const filtered = allTrailers.filter(t => t.name.toLowerCase().includes(query));
+            // Gather all checked boxes from the sidebar
+            const checkedBoxes = Array.from(document.querySelectorAll('#sidebarTrailerList input[type="checkbox"]:checked')).map(cb => cb.value);
+            
+            let filtered = allTrailers;
+            
+            // 1. Filter by Search Box
+            if (query) {
+                filtered = filtered.filter(t => t.name.toLowerCase().includes(query));
+            }
+            
+            // 2. Filter by Checkboxes (if any are checked)
+            if (checkedBoxes.length > 0) {
+                filtered = filtered.filter(t => checkedBoxes.includes(t.name));
+            }
+            
             renderTrailers(filtered);
         }
 
         function clearFilter() {
+            // Clear search box
             document.getElementById('searchInput').value = '';
-            if (allTrailers.length > 0) {
-                renderTrailers(allTrailers);
-            }
+            
+            // Uncheck all checkboxes in the sidebar
+            const checkboxes = document.querySelectorAll('#sidebarTrailerList input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = false);
+            
+            // Re-render
+            applyFilters();
         }
 
         document.getElementById('searchInput').addEventListener('keyup', function(e) {
             if (e.key === 'Enter') {
-                filterTrailers();
+                applyFilters();
             }
         });
 
@@ -533,6 +758,8 @@
             document.getElementById('searchInput').value = '';
             document.getElementById('dashboard').innerHTML = '<div class="empty-state"></div>';
             document.getElementById('reportInfo').style.display = 'none';
+            document.getElementById('trailerCountText').innerText = '';
+            document.getElementById('sidebarTrailerList').innerHTML = ''; // Wipe sidebar content
         }
     </script>
 </body>
