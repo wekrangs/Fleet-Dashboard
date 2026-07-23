@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleet Dashboard</title>
+    
+    <!-- SheetJS for reading Excel files in the browser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #141b2d;
+            --primary-glow: #00e5ff; /* Cyan */
+            --secondary-glow: #ff9d00; /* Orange */
+            --text-main: #e0e6ed;
+            --text-muted: #8b9bb4;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Montserrat', sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            background-image: radial-gradient(circle at top right, #112240, #0b0f19);
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Version Info Box */
+        .version-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(20, 27, 45, 0.7);
+            padding: 12px 18px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: right;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            z-index: 10;
+        }
+
+        .version-info div {
+            margin-bottom: 5px;
+        }
+
+        .version-info div:last-child {
+            margin-bottom: 0;
+        }
+        
+        .version-info strong {
+            color: var(--text-main);
+            margin-right: 5px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--primary-glow);
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.5), 0 0 20px rgba(0, 229, 255, 0.3);
+            margin-bottom: 10px;
+            padding-top: 20px;
+        }
+
+        .report-info {
+            text-align: center;
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            letter-spacing: 1px;
+        }
+
+        .report-info span {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .controls-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            background: rgba(20, 27, 45, 0.7);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .search-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button, input[type="file"], input[type="text"] {
+            background: #1a233a;
+            border: 1px solid var(--primary-glow);
+            color: var(--text-main);
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Montserrat', sans-serif;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--text-muted);
+        }
+
+        button:hover {
+            background: var(--primary-glow);
+            color: #000;
+            box-shadow: 0 0 15px var(--primary-glow);
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #clearBtn {
+            border-color: var(--secondary-glow);
+        }
+        #clearBtn:hover {
+            background: var(--secondary-glow);
+            box-shadow: 0 0 15px var(--secondary-glow);
+            color: #000;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .trailer-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            position: relative;
+            border: 1px solid rgba(0, 229, 255, 0.15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .trailer-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary-glow);
+            box-shadow: 0 12px 40px rgba(0, 229, 255, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .card-header i {
+            color: var(--primary-glow);
+            font-size: 2.2rem;
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
+        }
+
+        .card-header h2 {
+            margin: 0;
+            font-size: 1.4rem;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        .card-license {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .card-odo {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .odo-stat span {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+
+        .odo-stat strong {
+            color: var(--text-main);
+            font-size: 1.1rem;
+        }
+
+        .card-total {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: var(--secondary-glow);
+            margin-bottom: 20px;
+            text-shadow: 0 0 8px rgba(255, 157, 0, 0.4);
+            border-bottom: 1px solid rgba(255, 157, 0, 0.2);
+            padding-bottom: 10px;
+        }
+
+        .card-days {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .day-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px dashed rgba(255,255,255,0.08);
+            font-size: 0.95rem;
+            color: #c4d0df;
+        }
+        .day-row:last-child { border-bottom: none; }
+        
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            padding: 50px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="version-info">
+        <div><strong>Version:</strong> 1</div>
+        <div><strong>Date:</strong> July 23, 2026</div>
+        <div><strong>Time:</strong> 11:25 AM AEST</div>
+    </div>
+
+    <h1>Fleet Dashboard</h1>
+    <div class="report-info" id="reportInfo" style="display: none;">
+        Report date range : <span id="reportDateRangeText"></span>
+    </div>
+
+    <div class="controls-container">
+        <input type="file" id="fileInput" accept=".xlsx, .xls">
+        <button id="uploadBtn" onclick="handleUpload()"><i class="fa-solid fa-cloud-arrow-up"></i> Process File</button>
+        <button id="clearBtn" onclick="clearDashboard()"><i class="fa-solid fa-trash-can"></i> Clear</button>
+        
+        <div class="search-group">
+            <input type="text" id="searchInput" placeholder="Search trailer name...">
+            <button id="searchBtn" onclick="filterTrailers()"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+            <button id="clearFilterBtn" onclick="clearFilter()"><i class="fa-solid fa-eraser"></i> Clear Filter</button>
+        </div>
+    </div>
+
+    <div class="dashboard" id="dashboard">
+        <div class="empty-state"></div>
+    </div>
+
+    <script>
+        let allTrailers = [];
+
+        function handleUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert("Please select the Excel file first.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    
+                    const sheetName = workbook.SheetNames.includes('Journey day summary') 
+                                      ? 'Journey day summary' 
+                                      : workbook.SheetNames[0];
+                    
+                    const sheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                    
+                    processExcelData(jsonData);
+                } catch (error) {
+                    console.error("Error reading file:", error);
+                    alert("There was an error parsing the file. Make sure it is a valid Excel format.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processExcelData(data) {
+            let headerIdx = -1;
+            let cols = { name: -1, license: -1, date: -1, distance: -1, startOdo: -1, endOdo: -1 };
+            
+            let extractedDateRange = "N/A";
+            for (let i = 0; i < Math.min(30, data.length); i++) {
+                if (data[i]) {
+                    for (let j = 0; j < data[i].length; j++) {
+                        if (typeof data[i][j] === 'string' && data[i][j].trim() === 'Report date range :') {
+                            if (data[i+1] && data[i+1][j]) {
+                                extractedDateRange = data[i+1][j];
+                            } else if (data[i][j+1]) { 
+                                extractedDateRange = data[i][j+1];
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (extractedDateRange !== "N/A") {
+                document.getElementById('reportDateRangeText').innerText = extractedDateRange;
+                document.getElementById('reportInfo').style.display = 'block';
+            }
+
+            for(let i = 0; i < data.length; i++) {
+                const row = data[i];
+                if(!row) continue;
+                
+                cols.name = row.indexOf("Name");
+                cols.license = row.indexOf("License plate");
+                cols.date = row.indexOf("Start date");
+                cols.distance = row.indexOf("Distance");
+                cols.startOdo = row.indexOf("Start ODO");
+                cols.endOdo = row.indexOf("End ODO");
+                
+                if (cols.name !== -1 && cols.distance !== -1) {
+                    headerIdx = i;
+                    break;
+                }
+            }
+            
+            if (headerIdx === -1) {
+                alert("Could not find required column headers ('Name', 'Distance') in the Excel file.");
+                return;
+            }
+
+            const trailerMap = new Map();
+            
+            for(let i = headerIdx + 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || row.length === 0) continue;
+                
+                const name = row[cols.name];
+                if (!name) continue; 
+                
+                const license = cols.license !== -1 ? row[cols.license] : 'N/A';
+                const dateVal = row[cols.date];
+                const dist = parseFloat(row[cols.distance]) || 0;
+                
+                const startOdoVal = cols.startOdo !== -1 ? row[cols.startOdo] : null;
+                const endOdoVal = cols.endOdo !== -1 ? row[cols.endOdo] : null;
+                
+                if (!trailerMap.has(name)) {
+                    trailerMap.set(name, {
+                        name: name,
+                        license: license,
+                        totalDistance: 0,
+                        startOdo: null,
+                        endOdo: null,
+                        days: []
+                    });
+                }
+                
+                const trailer = trailerMap.get(name);
+                
+                if (!dateVal || dateVal === "NaN" || String(dateVal).trim() === "") {
+                    trailer.totalDistance = dist;
+                } else {
+                    trailer.days.push({ 
+                        dateStr: formatExcelDate(dateVal), 
+                        distance: dist 
+                    });
+                    
+                    if (startOdoVal !== null && startOdoVal !== undefined && String(startOdoVal).trim() !== "" && String(startOdoVal) !== "NaN") {
+                        if (trailer.startOdo === null) {
+                            trailer.startOdo = parseFloat(startOdoVal);
+                        }
+                    }
+                    
+                    if (endOdoVal !== null && endOdoVal !== undefined && String(endOdoVal).trim() !== "" && String(endOdoVal) !== "NaN") {
+                        trailer.endOdo = parseFloat(endOdoVal);
+                    }
+                }
+            }
+            
+            allTrailers = Array.from(trailerMap.values());
+            allTrailers.sort((a, b) => b.totalDistance - a.totalDistance);
+            renderTrailers(allTrailers);
+        }
+
+        function formatExcelDate(dateVal) {
+            let d;
+            if (dateVal instanceof Date) {
+                d = dateVal;
+            } else {
+                d = new Date(dateVal);
+            }
+            
+            if (isNaN(d.getTime())) return dateVal; 
+            
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const dayName = days[d.getDay()];
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const yyyy = d.getFullYear();
+            
+            return `${dayName} - ${dd}/${mm}/${yyyy}`;
+        }
+
+        function renderTrailers(trailersToRender) {
+            const container = document.getElementById('dashboard');
+            container.innerHTML = '';
+            
+            if (trailersToRender.length === 0) {
+                container.innerHTML = '<div class="empty-state">No trailers found matching that criteria.</div>';
+                return;
+            }
+
+            trailersToRender.forEach(t => {
+                const card = document.createElement('div');
+                card.className = 'trailer-card';
+                
+                const daysHtml = t.days.map(d => `
+                    <div class="day-row">
+                        <span>${d.dateStr}</span>
+                        <span>${d.distance.toFixed(1)} km</span>
+                    </div>
+                `).join('');
+
+                const sOdoStr = t.startOdo !== null ? t.startOdo.toLocaleString() : 'N/A';
+                const eOdoStr = t.endOdo !== null ? t.endOdo.toLocaleString() : 'N/A';
+                
+                card.innerHTML = `
+                    <div class="card-header">
+                        <i class="fa-solid fa-trailer"></i>
+                        <h2>${t.name}</h2>
+                    </div>
+                    <div class="card-license">
+                        License Plate: ${t.license || 'N/A'}
+                    </div>
+                    <div class="card-odo">
+                        <div class="odo-stat">
+                            <span>Start ODO</span>
+                            <strong>${sOdoStr}</strong>
+                        </div>
+                        <div class="odo-stat" style="text-align: right;">
+                            <span>End ODO</span>
+                            <strong>${eOdoStr}</strong>
+                        </div>
+                    </div>
+                    <div class="card-total">
+                        Total: ${t.totalDistance.toFixed(1)} km
+                    </div>
+                    <div class="card-days">
+                        ${daysHtml.length > 0 ? daysHtml : '<div class="day-row">No daily logs found.</div>'}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function filterTrailers() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            if (!allTrailers.length) return;
+            
+            const filtered = allTrailers.filter(t => t.name.toLowerCase().includes(query));
+            renderTrailers(filtered);
+        }
+
+        function clearFilter() {
+            document.getElementById('searchInput').value = '';
+            if (allTrailers.length > 0) {
+                renderTrailers(allTrailers);
+            }
+        }
+
+        document.getElementById('searchInput').addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                filterTrailers();
+            }
+        });
+
+        function clearDashboard() {
+            allTrailers = [];
+            document.getElementById('fileInput').value = '';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('dashboard').innerHTML = '<div class="empty-state"></div>';
+            document.getElementById('reportInfo').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
